@@ -52,11 +52,12 @@ nothing machine-specific is written):
 ```bash
 cd /path/to/opencode-notify-webhook
 npm install
-npm run dev:link     # creates .opencode/plugins/notify.ts
+npm run dev:setup    # creates .opencode/plugins/notify.ts + a dev config
 ```
 
 Restart OpenCode (or reload the location). The plugin is picked up from
-`.opencode/plugins/notify.ts`; remove it with `npm run dev:unlink`.
+`.opencode/plugins/notify.ts`; remove it with `npm run dev:teardown`. See
+[Development](#development) for a local capture server.
 
 Local discovery does not pass plugin `options`, so for a dev checkout put your
 configuration in `opencode-notify-webhook.json` (below) instead of `options`.
@@ -247,15 +248,35 @@ npm install
 npm run typecheck   # tsc --noEmit
 npm test            # node --test
 npm run test:coverage
-
-# Load the local checkout into OpenCode for manual testing:
-npm run dev:link    # writes .opencode/plugins/notify.ts (relative, gitignored)
-npm run dev:unlink
 ```
 
+### Testing the local checkout
+
+```bash
+npm run dev:setup    # link the plugin + write a dev config
+npm run dev:capture  # terminal A: print every payload (http://127.0.0.1:8787)
+# terminal B: run OpenCode inside this repo
+```
+
+`npm run dev` does both (`dev:setup` then the capture server).
+
+`dev:setup` is idempotent and:
+
+- links this checkout into `.opencode/plugins/` using a **relative** path
+  (nothing machine-specific is written);
+- writes `.opencode/opencode-notify-webhook.json` with a `capture` target that
+  points at the local sink;
+- removes any **globally installed** copy of this package from
+  `~/.config/opencode/opencode.json`, so the local checkout takes priority
+  instead of firing duplicate webhooks.
+
+Undo the local setup with `npm run dev:teardown`. Local discovery does not pass
+plugin `options`, so dev configuration lives in `opencode-notify-webhook.json`
+(below) rather than in `options`.
+
 The test suite covers config merging, env substitution, payload builders for
-every preset, transport retry/timeout behavior, and end-to-end handling against
-a local HTTP server.
+every preset, transport retry/timeout behavior, location scoping, and
+end-to-end handling against a local HTTP server.
 
 ## Publishing
 

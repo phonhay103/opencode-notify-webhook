@@ -48,6 +48,10 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test",
     "test:coverage": "node --test --experimental-test-coverage",
+    "dev": "node scripts/dev-setup.mjs && node scripts/dev-capture.mjs",
+    "dev:setup": "node scripts/dev-setup.mjs",
+    "dev:capture": "node scripts/dev-capture.mjs",
+    "dev:teardown": "node scripts/dev-teardown.mjs",
     "dev:link": "node scripts/dev-link.mjs",
     "dev:unlink": "node -e \"require('node:fs').rmSync('.opencode/plugins/notify.ts',{ force: true })\"",
     "prepublishOnly": "npm run typecheck && npm test"
