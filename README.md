@@ -45,22 +45,20 @@ process) so it reloads plugins.
 
 ### From a local checkout
 
-OpenCode v2 discovers local plugins from any `.opencode/plugins/` directory.
-Generate a dev entry that re-exports this package (it uses a relative path, so
-nothing machine-specific is written):
+OpenCode v2 can load a local checkout either as a plugin discovered from
+`.opencode/plugins/`, or through the `plugins` array in `opencode.jsonc`.
+`dev:setup` uses the latter — the same path an installed package uses,
+including `options` — and writes a gitignored `.opencode/opencode.jsonc` with a
+**relative** path to the source:
 
 ```bash
 cd /path/to/opencode-notify-webhook
 npm install
-npm run dev:setup    # creates .opencode/plugins/notify.ts + a dev config
+npm run dev:setup    # writes .opencode/opencode.jsonc (plugins + options)
 ```
 
-Restart OpenCode (or reload the location). The plugin is picked up from
-`.opencode/plugins/notify.ts`; remove it with `npm run dev:teardown`. See
-[Development](#development) for a local capture server.
-
-Local discovery does not pass plugin `options`, so for a dev checkout put your
-configuration in `opencode-notify-webhook.json` (below) instead of `options`.
+Restart OpenCode (or run `opencode reload`). Undo with `npm run dev:teardown`.
+See [Development](#development) for a local capture server or a real target.
 
 
 ## Quick start
@@ -253,26 +251,32 @@ npm run test:coverage
 ### Testing the local checkout
 
 ```bash
-npm run dev:setup    # link the plugin + write a dev config
-npm run dev:capture  # terminal A: print every payload (http://127.0.0.1:8787)
+npm run dev:setup    # writes .opencode/opencode.jsonc (plugins + options)
+# terminal A (optional): npm run dev:capture   # local sink on :8787
 # terminal B: run OpenCode inside this repo
 ```
 
-`npm run dev` does both (`dev:setup` then the capture server).
+`dev:setup` mirrors how an installed package is used: it loads this checkout
+through the `plugins` array with `options`, using a **relative** path
+(`../src`), so nothing machine-specific is written. It also removes any
+globally installed copy of this package from `~/.config/opencode/opencode.json`
+so the local checkout takes priority instead of firing duplicate webhooks.
 
-`dev:setup` is idempotent and:
+By default the dev target is a local capture sink. To send to a real service
+while developing, put its URL in the gitignored `.opencode/dev.env` and re-run
+`dev:setup`:
 
-- links this checkout into `.opencode/plugins/` using a **relative** path
-  (nothing machine-specific is written);
-- writes `.opencode/opencode-notify-webhook.json` with a `capture` target that
-  points at the local sink;
-- removes any **globally installed** copy of this package from
-  `~/.config/opencode/opencode.json`, so the local checkout takes priority
-  instead of firing duplicate webhooks.
+```sh
+# .opencode/dev.env  (gitignored — never committed)
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
 
-Undo the local setup with `npm run dev:teardown`. Local discovery does not pass
-plugin `options`, so dev configuration lives in `opencode-notify-webhook.json`
-(below) rather than in `options`.
+`dev:setup` then generates a `discord` target. Secrets stay out of tracked
+files.
+
+Undo with `npm run dev:teardown`. `npm run dev:link` is an alternative that
+loads the plugin through auto-discovery (`.opencode/plugins/notify.ts`) without
+`options`.
 
 The test suite covers config merging, env substitution, payload builders for
 every preset, transport retry/timeout behavior, location scoping, and
