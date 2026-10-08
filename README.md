@@ -45,14 +45,17 @@ process) so it reloads plugins.
 
 ### From a local checkout
 
-OpenCode v2 loads a local checkout through the same `plugins` array an
-installed package uses (so it can carry `options`). `dev:setup` writes a
-gitignored `.opencode/opencode.jsonc` that
+OpenCode dedups plugins by the id they declare, and a globally installed copy
+is merged before the project config — so a local entry that reuses
+`opencode-notify-webhook` would be shadowed by the installed package.
+`dev:setup` therefore generates a small gitignored wrapper
+(`.opencode/dev/notify-dev/`) that re-registers the same setup under
+`opencode-notify-webhook-dev`, and writes a `.opencode/opencode.jsonc` that
 
 1. disables any globally installed copy for this location with the
    `-opencode-notify-webhook` directive (V2 [Control
    syntax](https://opencode.ai/v2/docs/plugins#control)), then
-2. loads the local source directory with a **relative** path (`../src`).
+2. loads the wrapper directory (`./dev/notify-dev`) with its `options`.
 
 Your global `~/.config/opencode/opencode.json` is **never modified**, so real
 notifications keep working in every other project while you develop here.
@@ -60,7 +63,7 @@ notifications keep working in every other project while you develop here.
 ```bash
 cd /path/to/opencode-notify-webhook
 npm install
-npm run dev:setup    # writes .opencode/opencode.jsonc (plugins + options)
+npm run dev:setup    # writes .opencode/opencode.jsonc + .opencode/dev/
 ```
 
 Restart OpenCode (or run `opencode reload`). Undo with `npm run dev:teardown`.
@@ -311,10 +314,13 @@ npm run dev:setup    # writes .opencode/opencode.jsonc (plugins + options)
 # terminal B: run OpenCode inside this repo
 ```
 
-`dev:setup` loads this checkout through the `plugins` array with `options`
-(relative source directory `../src`), so nothing machine-specific is written. It
-also prepends `-opencode-notify-webhook`, which disables any globally installed
-copy **for this location only** — your global config is left untouched.
+`dev:setup` generates a gitignored wrapper under `.opencode/dev/notify-dev/`
+that re-registers this checkout under the id `opencode-notify-webhook-dev`, and
+loads it through the `plugins` array with `options`. The wrapper id must differ
+from the published one because OpenCode dedups plugins by declared id and the
+global copy is merged first. It also prepends `-opencode-notify-webhook`, which
+disables any globally installed copy **for this location only** — your global
+config is left untouched.
 
 By default the dev target is a local capture sink. To send to a real service
 while developing, put its URL in the gitignored `.opencode/dev.env` and re-run
@@ -336,7 +342,7 @@ Keep the two apart so development never disturbs real notifications:
 
 | | Source | Config location |
 | --- | --- | --- |
-| **Development** | this checkout (`package: "../src"`) | `.opencode/opencode.jsonc` in the repo (gitignored) |
+| **Development** | this checkout via the `opencode-notify-webhook-dev` wrapper | `.opencode/` in the repo (gitignored) |
 | **Real usage** | published npm package, pinned | `~/.config/opencode/opencode.json` |
 
 Because the repo config prepends `-opencode-notify-webhook`, OpenCode loads

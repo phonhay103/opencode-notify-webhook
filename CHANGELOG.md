@@ -4,6 +4,23 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Local development loads again when the package is installed globally.**
+  OpenCode dedups plugins by their declared id and merges the global config
+  before the project config, so a local entry reusing `opencode-notify-webhook`
+  was shadowed by the installed package and never loaded. `npm run dev:setup`
+  now generates a gitignored wrapper (`.opencode/dev/notify-dev/`, id
+  `opencode-notify-webhook-dev`) that re-registers the same setup, and the local
+  entry is a directory (plugin entries must be directories, not `.ts` files).
+
+### Added
+
+- `src/index.ts` exports `setup` and `PLUGIN_ID` so the development wrapper can
+  re-register the plugin under a different id.
+
 ## [0.2.0] - 2026-10-09
 
 ### Changed

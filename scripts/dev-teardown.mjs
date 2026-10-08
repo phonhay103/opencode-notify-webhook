@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const targets = [
   resolve(root, ".opencode", "opencode.jsonc"),
+  resolve(root, ".opencode", "dev", "notify-dev", "index.ts"),
   resolve(root, ".opencode", "plugins", "notify.ts"),
   resolve(root, ".opencode", "opencode-notify-webhook.json"),
 ];
