@@ -6,6 +6,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-09
+
+### Added
+
+- Release pipeline now publishes via npm trusted publishing (OIDC) from GitHub
+  Actions; this version verifies that flow end to end.
+
 ## [0.1.1] - 2026-10-09
 
 ### Fixed
