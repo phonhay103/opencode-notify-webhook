@@ -245,13 +245,34 @@ a local HTTP server.
 
 ## Publishing
 
-```bash
-npm version patch      # or minor / major
-npm publish --access public --provenance
-```
+Publishing is automated with npm
+[trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) — no
+long-lived npm token is required. Provenance is generated automatically.
 
-`prepublishOnly` runs typecheck and tests first. Tag pushes (`v*`) run the same
-checks and publish from CI (see `.github/workflows/publish.yml`).
+1. Configure a trusted publisher for the package (workflow `publish.yml`, allow
+   `npm publish`). On npmjs.com: package → Settings → Trusted Publisher →
+   GitHub Actions; or from the CLI:
+
+   ```bash
+   npm trust github opencode-notify-webhook \
+     --file publish.yml \
+     --repo phonhay103/opencode-notify-webhook \
+     --allow-publish
+   ```
+
+2. Bump the version and push a tag:
+
+   ```bash
+   npm version patch        # or minor / major
+   git push --follow-tags
+   ```
+
+The tag push runs `.github/workflows/publish.yml`, which installs, typechecks,
+tests, and publishes via OIDC.
+
+> The first release of a brand-new package name needs its trusted publisher
+> configured before the first tag push; a new trusted publisher configuration
+> must complete its first successful publish within 2 days.
 
 ## License
 
