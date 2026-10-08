@@ -6,6 +6,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-09
+
+### Fixed
+
+- Scope events to the plugin instance's location by default (`scope:
+  "location"`). OpenCode loads a globally configured plugin once per active
+  location and each instance receives the server-wide event stream, so without
+  this filter a single event sent one webhook per open location. Set
+  `scope: "global"` to restore the previous behavior.
+
 ## [0.1.3] - 2026-10-09
 
 ### Fixed

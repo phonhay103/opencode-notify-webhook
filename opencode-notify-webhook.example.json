@@ -1,6 +1,7 @@
 {
   "enabled": true,
   "includeSubagents": false,
+  "scope": "location",
   "defaults": {
     "timeoutMs": 10000,
     "retries": 2,

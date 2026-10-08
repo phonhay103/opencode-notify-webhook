@@ -85,6 +85,19 @@ export interface NotifyConfig {
   enabled?: boolean;
   /** Also notify for subagent (child) sessions. Defaults to `false`. */
   includeSubagents?: boolean;
+  /**
+   * Event scope.
+   *
+   * `"location"` (default) only handles events whose location matches this
+   * plugin instance's location. OpenCode loads a globally configured plugin
+   * once per active location, and every instance receives the server-wide
+   * event stream, so without this filter one event produces one notification
+   * per open location.
+   *
+   * `"global"` handles every event the server emits (may duplicate when the
+   * plugin is active in several locations at once).
+   */
+  scope?: "location" | "global";
   /** Shared defaults applied to every target. */
   defaults?: DefaultsConfig;
   /** Per-event configuration. When omitted a sensible default set is used. */

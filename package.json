@@ -1,6 +1,6 @@
 {
   "name": "opencode-notify-webhook",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "V2-native OpenCode plugin that sends notifications to webhooks (Slack, Discord, ntfy, Gotify, Telegram, Teams, Mattermost, generic JSON/text).",
   "type": "module",
   "license": "MIT",

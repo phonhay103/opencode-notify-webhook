@@ -43,6 +43,7 @@ export interface ResolvedTarget {
 export interface ResolvedConfig {
   enabled: boolean;
   includeSubagents: boolean;
+  scope: "location" | "global";
   timeoutMs: number;
   retries: number;
   method: string;
@@ -182,6 +183,7 @@ export function resolveConfig(config: NotifyConfig): ResolvedConfig {
   return {
     enabled: config.enabled ?? true,
     includeSubagents: config.includeSubagents ?? false,
+    scope: config.scope === "global" ? "global" : "location",
     timeoutMs,
     retries,
     method,

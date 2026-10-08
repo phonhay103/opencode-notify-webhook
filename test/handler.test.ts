@@ -169,6 +169,7 @@ test("handle renders message templates", async () => {
 test("handle reads V2 event data and event location", async () => {
   await withServer(async ({ url, requests }) => {
     const config = resolveConfig({
+      scope: "global",
       events: { "session.created": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
@@ -185,6 +186,71 @@ test("handle reads V2 event data and event location", async () => {
     assert.equal(body.sessionID, "ses_v2");
     assert.equal(body.sessionTitle, "My Session");
     assert.equal(body.directory, "/work/other");
+  });
+});
+
+test("handle scopes events to the instance location by default", async () => {
+  await withServer(async ({ url, requests }) => {
+    const config = resolveConfig({
+      events: { "session.idle": {} },
+      targets: [{ name: "t", type: "generic", url }],
+    });
+    const notifier = createNotifier(makeHost(), config, true);
+
+    // Same location: handled.
+    await notifier.handle({
+      type: "session.idle",
+      data: { sessionID: "ses_1" },
+      location: { directory: "/work/app" },
+    });
+    // Another location: skipped (this instance does not own the event).
+    await notifier.handle({
+      type: "session.idle",
+      data: { sessionID: "ses_2" },
+      location: { directory: "/work/other" },
+    });
+
+    assert.equal(requests.length, 1);
+    assert.equal(JSON.parse(requests[0]).sessionID, "ses_1");
+  });
+});
+
+test("handle scope:global handles events from any location", async () => {
+  await withServer(async ({ url, requests }) => {
+    const config = resolveConfig({
+      scope: "global",
+      events: { "session.idle": {} },
+      targets: [{ name: "t", type: "generic", url }],
+    });
+    const notifier = createNotifier(makeHost(), config, true);
+
+    await notifier.handle({
+      type: "session.idle",
+      data: { sessionID: "ses_2" },
+      location: { directory: "/work/other" },
+    });
+
+    assert.equal(requests.length, 1);
+  });
+});
+
+test("handle skips events for another workspace of the same directory", async () => {
+  await withServer(async ({ url, requests }) => {
+    const config = resolveConfig({
+      events: { "session.idle": {} },
+      targets: [{ name: "t", type: "generic", url }],
+    });
+    const host = makeHost();
+    host.location!.workspaceID = "ws_a";
+    const notifier = createNotifier(host, config, true);
+
+    await notifier.handle({
+      type: "session.idle",
+      data: { sessionID: "ses_1" },
+      location: { directory: "/work/app", workspaceID: "ws_b" },
+    });
+
+    assert.equal(requests.length, 0);
   });
 });
 

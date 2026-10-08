@@ -30,6 +30,7 @@ test("resolveConfig fills defaults", () => {
   const resolved = resolveConfig({ targets: [{ type: "generic", url: "https://x" }] });
   assert.equal(resolved.enabled, true);
   assert.equal(resolved.includeSubagents, false);
+  assert.equal(resolved.scope, "location");
   assert.equal(resolved.method, "POST");
   assert.equal(resolved.timeoutMs, 10_000);
   assert.equal(resolved.retries, 2);

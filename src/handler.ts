@@ -1,4 +1,4 @@
-import { basename } from "node:path";
+import { basename, resolve } from "node:path";
 import type { ResolvedConfig, ResolvedTarget } from "./config.ts";
 import {
   defaultMessage,
@@ -28,6 +28,7 @@ export interface SessionLike {
 export interface PluginHost {
   location?: {
     directory?: string;
+    workspaceID?: string;
     project?: { id?: string; canonical?: string; directory?: string };
   };
   session: {
@@ -47,6 +48,44 @@ export interface Notifier {
 
 function slugify(input: string): string {
   return input.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "project";
+}
+
+function normalizeDirectory(directory: string): string {
+  try {
+    return resolve(directory);
+  } catch {
+    return directory;
+  }
+}
+
+/**
+ * Whether an event belongs to this plugin instance's location.
+ *
+ * A globally configured plugin is loaded once per active location and every
+ * instance receives the server-wide event stream, so matching the event's
+ * location to the instance is what prevents duplicate notifications.
+ */
+function belongsToInstanceLocation(
+  host: PluginHost,
+  event: RawEvent,
+): boolean {
+  const hostDirectory = host.location?.directory;
+  const eventDirectory = event.location?.directory;
+  if (
+    hostDirectory &&
+    eventDirectory &&
+    normalizeDirectory(hostDirectory) !== normalizeDirectory(eventDirectory)
+  ) {
+    return false;
+  }
+
+  const hostWorkspace = host.location?.workspaceID;
+  const eventWorkspace = event.location?.workspaceID;
+  if (hostWorkspace && eventWorkspace && hostWorkspace !== eventWorkspace) {
+    return false;
+  }
+
+  return true;
 }
 
 function buildContext(
@@ -138,6 +177,10 @@ export function createNotifier(
 
   async function handle(event: RawEvent): Promise<void> {
     if (!enabled) return;
+
+    if (config.scope === "location" && !belongsToInstanceLocation(host, event)) {
+      return;
+    }
 
     const eventConfig = config.events[event.type];
     if (!eventConfig || eventConfig.notify === false) return;

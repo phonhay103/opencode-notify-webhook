@@ -111,12 +111,26 @@ You can put a short config directly in `opencode.json`:
 | --- | --- | --- | --- |
 | `enabled` | boolean | `true` | Master switch. |
 | `includeSubagents` | boolean | `false` | Also notify for subagent (child) sessions. |
+| `scope` | `"location"` \| `"global"` | `"location"` | Only handle events for this plugin instance's location. See [Scope](#scope). |
 | `defaults` | object | — | Shared defaults: `timeoutMs`, `retries`, `method`. |
 | `events` | object | see below | Per-event config. Keys are the allow-list of handled events. |
 | `targets` | array | `[]` | Webhook destinations. |
 
 When `events` is omitted the default set is used:
 `session.idle`, `session.error`, `permission.asked`, `question.asked`.
+
+### Scope
+
+OpenCode loads a **globally** configured plugin once per active location (every
+directory where OpenCode is running), and each instance receives the server-wide
+event stream. Without filtering, opening OpenCode in several directories makes
+one event send several identical webhooks.
+
+The default `scope: "location"` makes each instance handle only events whose
+location matches its own, so every event produces exactly one notification.
+Set `scope: "global"` to handle every event from every location instead (only
+useful for a single-location setup, or if you deliberately want the plugin to
+react in one place regardless of where the event happened).
 
 ### Per-event config
 

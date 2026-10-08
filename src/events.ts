@@ -7,7 +7,7 @@ export interface RawEvent {
   /** V1 event payload (kept for compatibility). */
   properties?: Record<string, unknown>;
   durable?: { aggregateID?: string; seq?: number; version?: number };
-  location?: { directory?: string };
+  location?: { directory?: string; workspaceID?: string };
 }
 
 /** Payload of a V2 (`data`) or V1 (`properties`) event. */
