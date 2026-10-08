@@ -60,6 +60,42 @@ npm run dev:setup    # writes .opencode/opencode.jsonc (plugins + options)
 Restart OpenCode (or run `opencode reload`). Undo with `npm run dev:teardown`.
 See [Development](#development) for a local capture server or a real target.
 
+### Global install
+
+```bash
+opencode plugin add opencode-notify-webhook@latest
+```
+
+This installs the package into OpenCode's cache and writes a **bare string**
+into `~/.config/opencode/opencode.json`. A string cannot carry `options`, so to
+configure the plugin you replace it with an object:
+
+```jsonc
+// ~/.config/opencode/opencode.json
+{
+  "plugins": [
+    {
+      "package": "opencode-notify-webhook@latest",
+      "options": {
+        "enabled": true,
+        "scope": "location",
+        "targets": [
+          {
+            "name": "discord",
+            "type": "discord",
+            "url": "${DISCORD_WEBHOOK_URL}"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+Keep `scope: "location"` (the default): a globally installed plugin is loaded
+once per active location, and this scope filter is what keeps each event to
+exactly one webhook. Webhook URLs can stay out of the file via
+[environment variables](#environment-variables).
 
 ## Quick start
 
