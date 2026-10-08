@@ -4,7 +4,42 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/) and this
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-09
+
+### Changed
+
+- **Fixed automatic notifications.** The default event set now uses the event
+  names OpenCode V2 actually emits: `session.execution.succeeded`,
+  `session.execution.failed`, `permission.asked`, and `form.created`. Previously
+  the defaults (`session.idle`, `session.error`, `permission.asked`,
+  `question.asked`) never fired for a completed run because V2 does not emit
+  `session.error` or `question.asked`, and `session.idle` is not emitted in the
+  run flow.
+- **Removed the agent tools** (`notify_toggle`, `notify_status`,
+  `notify_test`) and the persisted runtime toggle. Notifications are driven
+  purely by the server event stream; use the config to enable/disable.
+- Per-event messages, emoji, and error extraction now cover the V2 execution
+  events; `form.created` session ids are read from the nested `form` object.
+
+### Fixed
+
+- **Development no longer mutates the global config.** `npm run dev:setup` used
+  to delete the globally installed copy of this package from
+  `~/.config/opencode/opencode.json` (with no restore), so developing here
+  disabled real notifications everywhere. It now writes a gitignored
+  `.opencode/opencode.jsonc` that prepends the `-opencode-notify-webhook`
+  directive (V2 Control syntax) to disable the global copy for this location
+  only, then loads the local source directory (`package: "../src"`). The global
+  config is left untouched.
+- Removed the deprecated `dev:link`/`dev:unlink` auto-discovery flow, which
+  could load the plugin a second time without `options`.
+
+### Added
+
+- `npm run dev:isolate` — runs `opencode run --standalone` against a throwaway
+  `OPENCODE_CONFIG_DIR` and temp work dir, captures the webhooks it sends, and
+  exits non-zero when none arrived. No global or project config is read or
+  written.
 
 ## [0.1.4] - 2026-10-09
 

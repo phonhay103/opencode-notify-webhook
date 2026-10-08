@@ -1,6 +1,6 @@
 {
   "name": "opencode-notify-webhook",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "V2-native OpenCode plugin that sends notifications to webhooks (Slack, Discord, ntfy, Gotify, Telegram, Teams, Mattermost, generic JSON/text).",
   "type": "module",
   "license": "MIT",
@@ -51,9 +51,8 @@
     "dev": "node scripts/dev-setup.mjs && node scripts/dev-capture.mjs",
     "dev:setup": "node scripts/dev-setup.mjs",
     "dev:capture": "node scripts/dev-capture.mjs",
+    "dev:isolate": "node scripts/dev-isolate.mjs",
     "dev:teardown": "node scripts/dev-teardown.mjs",
-    "dev:link": "node scripts/dev-link.mjs",
-    "dev:unlink": "node -e \"require('node:fs').rmSync('.opencode/plugins/notify.ts',{ force: true })\"",
     "prepublishOnly": "npm run typecheck && npm test"
   },
   "publishConfig": {

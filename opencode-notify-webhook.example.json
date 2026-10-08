@@ -8,24 +8,24 @@
     "method": "POST"
   },
   "events": {
-    "session.idle": { "message": "Session finished and is waiting for input" },
-    "session.error": { "message": "Session encountered an error" },
+    "session.execution.succeeded": { "message": "Session finished and is waiting for input" },
+    "session.execution.failed": { "message": "Session encountered an error" },
     "permission.asked": { "message": "Permission required to continue" },
-    "question.asked": { "message": "Input required to continue" }
+    "form.created": { "message": "Input required to continue" }
   },
   "targets": [
     {
       "name": "slack",
       "type": "slack",
       "url": "${SLACK_WEBHOOK_URL}",
-      "events": ["session.idle", "session.error", "permission.asked"]
+      "events": ["session.execution.succeeded", "session.execution.failed", "permission.asked"]
     },
     {
       "name": "discord",
       "type": "discord",
       "url": "${DISCORD_WEBHOOK_URL}",
       "username": "opencode",
-      "events": ["session.error"]
+      "events": ["session.execution.failed"]
     },
     {
       "name": "ntfy",
@@ -41,14 +41,14 @@
       "url": "https://gotify.example.com/message",
       "token": "${GOTIFY_TOKEN}",
       "priority": 5,
-      "events": ["session.error", "permission.asked"]
+      "events": ["session.execution.failed", "permission.asked"]
     },
     {
       "name": "telegram",
       "type": "telegram",
       "token": "${TELEGRAM_BOT_TOKEN}",
       "chatId": "${TELEGRAM_CHAT_ID}",
-      "events": ["session.idle"]
+      "events": ["session.execution.succeeded"]
     },
     {
       "name": "generic-json",
@@ -56,7 +56,7 @@
       "url": "https://example.com/hooks/opencode",
       "method": "POST",
       "headers": { "Authorization": "Bearer ${MY_HOOK_TOKEN}" },
-      "events": ["session.idle", "session.error"],
+      "events": ["session.execution.succeeded", "session.execution.failed"],
       "payload": {
         "event": "{{event}}",
         "text": "{{emoji}} {{message}}",

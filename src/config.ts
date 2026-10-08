@@ -12,10 +12,10 @@ export const CONFIG_FILENAME = "opencode-notify-webhook.json";
 
 /** Events tracked when the config does not declare an `events` map. */
 export const DEFAULT_EVENTS = [
-  "session.idle",
-  "session.error",
+  "session.execution.succeeded",
+  "session.execution.failed",
   "permission.asked",
-  "question.asked",
+  "form.created",
 ] as const;
 
 /** A target with every default resolved. */

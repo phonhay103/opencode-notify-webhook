@@ -39,11 +39,8 @@ export interface PluginHost {
 
 export interface Notifier {
   readonly config: ResolvedConfig;
-  enabled: boolean;
+  readonly enabled: boolean;
   handle(event: RawEvent): Promise<void>;
-  sendTest(targetName?: string): Promise<{ target: string; result: SendResult }[]>;
-  setEnabled(value: boolean): void;
-  status(): string;
 }
 
 function slugify(input: string): string {
@@ -128,31 +125,6 @@ function buildContext(
   return context;
 }
 
-function makeContext(
-  host: PluginHost,
-  overrides: Partial<NotificationContext>,
-): NotificationContext {
-  const directory = host.location?.directory ?? process.cwd();
-  const canonical = host.location?.project?.canonical ?? directory;
-  return {
-    event: "test",
-    message: "Test notification from opencode-notify-webhook",
-    title: "opencode-notify-webhook",
-    emoji: "🔔",
-    timestamp: new Date().toISOString(),
-    sessionID: "",
-    sessionTitle: "",
-    directory,
-    project: host.location?.project?.id ?? "",
-    projectName: canonical ? basename(canonical) : slugify(directory),
-    worktree: host.location?.project?.directory ?? canonical,
-    assistantText: "",
-    error: "",
-    permission: "",
-    ...overrides,
-  };
-}
-
 async function dispatch(
   target: ResolvedTarget,
   context: NotificationContext,
@@ -171,9 +143,8 @@ async function dispatch(
 export function createNotifier(
   host: PluginHost,
   config: ResolvedConfig,
-  initialEnabled: boolean,
 ): Notifier {
-  let enabled = initialEnabled;
+  const enabled = config.enabled;
 
   async function handle(event: RawEvent): Promise<void> {
     if (!enabled) return;
@@ -242,50 +213,11 @@ export function createNotifier(
     );
   }
 
-  async function sendTest(
-    targetName?: string,
-  ): Promise<{ target: string; result: SendResult }[]> {
-    const targets = targetName
-      ? config.targets.filter((target) => target.name === targetName)
-      : config.targets;
-    const context = makeContext(host, {});
-    const results: { target: string; result: SendResult }[] = [];
-    for (const target of targets) {
-      const result = await dispatch(target, context);
-      results.push({ target: target.name, result });
-    }
-    return results;
-  }
-
-  function setEnabled(value: boolean): void {
-    enabled = value;
-  }
-
-  function status(): string {
-    const tracked = Object.keys(config.events);
-    return [
-      `Webhook notifications: ${enabled ? "enabled" : "disabled"}`,
-      `Targets: ${config.targets.length}${
-        config.targets.length
-          ? ` (${config.targets.map((target) => target.name).join(", ")})`
-          : ""
-      }`,
-      `Tracked events: ${tracked.length ? tracked.join(", ") : "(none)"}`,
-      `Include subagents: ${config.includeSubagents}`,
-    ].join("\n");
-  }
-
   return {
     config,
     get enabled() {
       return enabled;
     },
-    set enabled(value: boolean) {
-      enabled = value;
-    },
     handle,
-    sendTest,
-    setEnabled,
-    status,
   };
 }

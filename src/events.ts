@@ -23,7 +23,19 @@ export function matchesEvent(type: string, filters: string[]): boolean {
 /** Best-effort extraction of a session id from an event. */
 export function extractSessionID(event: RawEvent): string | undefined {
   const props = eventPayload(event);
-  const candidates = [props.sessionID, props.sessionId, props.id, props.session];
+  // Some events (e.g. `form.created`) nest the session id under a sub-object.
+  const form = props.form;
+  const nested =
+    form && typeof form === "object"
+      ? (form as Record<string, unknown>).sessionID
+      : undefined;
+  const candidates = [
+    props.sessionID,
+    props.sessionId,
+    nested,
+    props.id,
+    props.session,
+  ];
   for (const candidate of candidates) {
     if (typeof candidate === "string" && candidate.length > 0) return candidate;
   }
@@ -93,6 +105,14 @@ export function extractPermission(event: RawEvent): string {
 /** Default human message for a known event type. */
 export function defaultMessage(type: string): string {
   switch (type) {
+    case "session.execution.succeeded":
+      return "Session finished and is waiting for input";
+    case "session.execution.failed":
+      return "Session encountered an error";
+    case "session.execution.started":
+      return "Session started running";
+    case "session.execution.interrupted":
+      return "Session execution was interrupted";
     case "session.idle":
       return "Session finished and is waiting for input";
     case "session.error":
@@ -101,6 +121,12 @@ export function defaultMessage(type: string): string {
       return "Permission required to continue";
     case "permission.replied":
       return "Permission request answered";
+    case "form.created":
+      return "Input required to continue";
+    case "form.replied":
+      return "Form answered";
+    case "form.cancelled":
+      return "Form cancelled";
     case "question.asked":
       return "Input required to continue";
     case "question.replied":
@@ -109,10 +135,12 @@ export function defaultMessage(type: string): string {
       return "New session started";
     case "session.deleted":
       return "Session ended";
+    case "session.compaction.ended":
     case "session.compacted":
       return "Session context compacted";
     case "todo.updated":
       return "Task list updated";
+    case "filesystem.changed":
     case "file.edited":
       return "File edited";
     default:
@@ -123,6 +151,14 @@ export function defaultMessage(type: string): string {
 /** Emoji prefix for a known event type (`""` when unknown). */
 export function emojiFor(type: string): string {
   switch (type) {
+    case "session.execution.succeeded":
+      return "✅";
+    case "session.execution.failed":
+      return "❌";
+    case "session.execution.started":
+      return "▶️";
+    case "session.execution.interrupted":
+      return "⏹️";
     case "session.idle":
       return "✅";
     case "session.error":
@@ -131,6 +167,10 @@ export function emojiFor(type: string): string {
       return "🔐";
     case "permission.replied":
       return "✔️";
+    case "form.created":
+      return "❓";
+    case "form.replied":
+      return "💬";
     case "question.asked":
       return "❓";
     case "question.replied":
@@ -139,10 +179,12 @@ export function emojiFor(type: string): string {
       return "🚀";
     case "session.deleted":
       return "🗑️";
+    case "session.compaction.ended":
     case "session.compacted":
       return "🗜️";
     case "todo.updated":
       return "📋";
+    case "filesystem.changed":
     case "file.edited":
       return "📝";
     default:
@@ -152,7 +194,12 @@ export function emojiFor(type: string): string {
 
 /** Events worth reading the transcript for (to include the last answer). */
 export function wantsAssistantText(type: string): boolean {
-  return type === "session.idle" || type === "session.error";
+  return (
+    type === "session.execution.succeeded" ||
+    type === "session.execution.failed" ||
+    type === "session.idle" ||
+    type === "session.error"
+  );
 }
 
 /** Extract the last assistant text from session messages. */

@@ -17,82 +17,7 @@ export default Plugin.define({
     const directory = ctx.location?.directory ?? process.cwd();
 
     const config = loadConfig({ directory, options });
-
-    const stored = await ctx.storage.get("enabled");
-    const enabled = typeof stored === "boolean" ? stored : config.enabled;
-    const notifier = createNotifier(host, config, enabled);
-
-    await ctx.tool.transform((editor) => {
-      editor.add({
-        name: "notify_toggle",
-        description:
-          "Enable or disable opencode-notify-webhook notifications at runtime.",
-        input: {
-          type: "object",
-          properties: {
-            enable: {
-              type: "boolean",
-              description: "true to enable notifications, false to disable",
-            },
-          },
-          required: ["enable"],
-          additionalProperties: false,
-        },
-        async execute(raw) {
-          const enable = Boolean((raw as { enable?: boolean }).enable);
-          notifier.setEnabled(enable);
-          await ctx.storage.set("enabled", enable);
-          return {
-            content: `Webhook notifications ${enable ? "enabled" : "disabled"}.`,
-          };
-        },
-      });
-
-      editor.add({
-        name: "notify_status",
-        description:
-          "Report opencode-notify-webhook status: enabled flag, targets, and tracked events.",
-        input: { type: "object", properties: {}, additionalProperties: false },
-        async execute() {
-          return { content: notifier.status() };
-        },
-      });
-
-      editor.add({
-        name: "notify_test",
-        description:
-          "Send a test notification to one or all configured webhook targets.",
-        input: {
-          type: "object",
-          properties: {
-            target: {
-              type: "string",
-              description: "Target name; omit to test all targets",
-            },
-          },
-          additionalProperties: false,
-        },
-        async execute(raw) {
-          const name = (raw as { target?: string }).target;
-          const results = await notifier.sendTest(name);
-          if (results.length === 0) {
-            return { content: "No matching webhook targets configured." };
-          }
-          return {
-            content: results
-              .map(
-                (entry) =>
-                  `${entry.target}: ${
-                    entry.result.ok
-                      ? `ok (${entry.result.status})`
-                      : `failed (${entry.result.error ?? "unknown error"})`
-                  }`,
-              )
-              .join("\n"),
-          };
-        },
-      });
-    });
+    const notifier = createNotifier(host, config);
 
     const controller = new AbortController();
     void (async () => {
@@ -114,7 +39,7 @@ export default Plugin.define({
     console.log(
       `[${PLUGIN_ID}] loaded: ${config.targets.length} target(s), ${
         Object.keys(config.events).length
-      } event(s), enabled=${enabled}`,
+      } event(s), enabled=${config.enabled}`,
     );
 
     return () => controller.abort();

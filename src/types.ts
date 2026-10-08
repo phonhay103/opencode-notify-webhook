@@ -30,7 +30,7 @@ export interface EventConfig {
 
 /** A single webhook destination. */
 export interface TargetConfig {
-  /** Friendly name used in logs and by `notify_test`. */
+  /** Friendly name used in logs. */
   name?: string;
   /**
    * Destination preset: `generic` | `slack` | `discord` | `ntfy` | `gotify`

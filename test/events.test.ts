@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  defaultMessage,
   eventPayload,
   extractError,
   extractParentID,
   extractPermission,
   extractSessionID,
   matchesEvent,
+  wantsAssistantText,
 } from "../src/events.ts";
 
 test("eventPayload prefers V2 data over properties", () => {
@@ -49,11 +51,35 @@ test("extractParentID reads V2 data and the session record", () => {
 });
 
 test("extractError handles strings and nested objects", () => {
-  assert.equal(extractError({ type: "session.error", data: { error: "boom" } }), "boom");
   assert.equal(
-    extractError({ type: "session.error", data: { error: { message: "nested" } } }),
+    extractError({ type: "session.execution.failed", data: { error: "boom" } }),
+    "boom",
+  );
+  assert.equal(
+    extractError({
+      type: "session.execution.failed",
+      data: { error: { type: "api", message: "nested" } },
+    }),
     "nested",
   );
+});
+
+test("extractSessionID reads a nested form session id", () => {
+  assert.equal(
+    extractSessionID({
+      type: "form.created",
+      data: { form: { id: "form_1", sessionID: "ses_form" } },
+    }),
+    "ses_form",
+  );
+});
+
+test("defaultMessage and emoji cover v2 execution events", () => {
+  assert.match(defaultMessage("session.execution.succeeded"), /finished/i);
+  assert.match(defaultMessage("session.execution.failed"), /error/i);
+  assert.equal(wantsAssistantText("session.execution.succeeded"), true);
+  assert.equal(wantsAssistantText("session.execution.failed"), true);
+  assert.equal(wantsAssistantText("permission.asked"), false);
 });
 
 test("extractPermission reads a resource list", () => {

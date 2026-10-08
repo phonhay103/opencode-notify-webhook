@@ -51,9 +51,10 @@ function makeHost(session?: {
 test("handle sends a generic payload on session.idle", async () => {
   await withServer(async ({ url, requests }) => {
     const config = resolveConfig({
+      events: { "session.idle": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
-    const notifier = createNotifier(makeHost({ title: "My Session" }), config, true);
+    const notifier = createNotifier(makeHost({ title: "My Session" }), config);
 
     await notifier.handle({
       type: "session.idle",
@@ -68,15 +69,50 @@ test("handle sends a generic payload on session.idle", async () => {
   });
 });
 
+test("default events fire on session.execution.succeeded", async () => {
+  await withServer(async ({ url, requests }) => {
+    const config = resolveConfig({
+      targets: [{ name: "t", type: "generic", url }],
+    });
+    const notifier = createNotifier(makeHost({ title: "My Session" }), config);
+
+    await notifier.handle({
+      type: "session.execution.succeeded",
+      data: { sessionID: "ses_1" },
+    });
+
+    assert.equal(requests.length, 1);
+    const body = JSON.parse(requests[0]);
+    assert.equal(body.event, "session.execution.succeeded");
+    assert.equal(body.sessionID, "ses_1");
+  });
+});
+
+test("default events ignore the deprecated session.error event", async () => {
+  await withServer(async ({ url, requests }) => {
+    const config = resolveConfig({
+      targets: [{ name: "t", type: "generic", url }],
+    });
+    const notifier = createNotifier(makeHost(), config);
+
+    await notifier.handle({
+      type: "session.error",
+      data: { sessionID: "ses_1", error: "boom" },
+    });
+
+    assert.equal(requests.length, 0);
+  });
+});
+
 test("handle skips subagent sessions by default", async () => {
   await withServer(async ({ url, requests }) => {
     const config = resolveConfig({
+      events: { "session.idle": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
     const notifier = createNotifier(
       makeHost({ title: "Child", parentID: "parent" }),
       config,
-      true,
     );
 
     await notifier.handle({
@@ -92,12 +128,12 @@ test("handle includes subagents when configured", async () => {
   await withServer(async ({ url, requests }) => {
     const config = resolveConfig({
       includeSubagents: true,
+      events: { "session.idle": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
     const notifier = createNotifier(
       makeHost({ title: "Child", parentID: "parent" }),
       config,
-      true,
     );
 
     await notifier.handle({
@@ -112,9 +148,11 @@ test("handle includes subagents when configured", async () => {
 test("handle does nothing when disabled", async () => {
   await withServer(async ({ url, requests }) => {
     const config = resolveConfig({
+      enabled: false,
+      events: { "session.idle": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
-    const notifier = createNotifier(makeHost(), config, false);
+    const notifier = createNotifier(makeHost(), config);
 
     await notifier.handle({
       type: "session.idle",
@@ -122,6 +160,7 @@ test("handle does nothing when disabled", async () => {
     });
 
     assert.equal(requests.length, 0);
+    assert.equal(notifier.enabled, false);
   });
 });
 
@@ -131,16 +170,16 @@ test("handle honors notify:false and unconfigured events", async () => {
       events: { "session.idle": { notify: false } },
       targets: [{ name: "t", type: "generic", url }],
     });
-    await createNotifier(makeHost(), muted, true).handle({
+    await createNotifier(makeHost(), muted).handle({
       type: "session.idle",
       properties: { sessionID: "ses_1" },
     });
 
     const other = resolveConfig({
-      events: { "session.error": {} },
+      events: { "session.execution.failed": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
-    await createNotifier(makeHost(), other, true).handle({
+    await createNotifier(makeHost(), other).handle({
       type: "session.idle",
       properties: { sessionID: "ses_1" },
     });
@@ -155,7 +194,7 @@ test("handle renders message templates", async () => {
       events: { "session.idle": { message: "Done: {{session.title}}" } },
       targets: [{ name: "t", type: "generic", url, format: "text" }],
     });
-    const notifier = createNotifier(makeHost({ title: "My Session" }), config, true);
+    const notifier = createNotifier(makeHost({ title: "My Session" }), config);
 
     await notifier.handle({
       type: "session.idle",
@@ -173,7 +212,7 @@ test("handle reads V2 event data and event location", async () => {
       events: { "session.created": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
-    const notifier = createNotifier(makeHost({ title: "My Session" }), config, true);
+    const notifier = createNotifier(makeHost({ title: "My Session" }), config);
 
     await notifier.handle({
       type: "session.created",
@@ -189,13 +228,32 @@ test("handle reads V2 event data and event location", async () => {
   });
 });
 
+test("handle reads a nested session id from form events", async () => {
+  await withServer(async ({ url, requests }) => {
+    const config = resolveConfig({
+      scope: "global",
+      events: { "form.created": {} },
+      targets: [{ name: "t", type: "generic", url }],
+    });
+    const notifier = createNotifier(makeHost(), config);
+
+    await notifier.handle({
+      type: "form.created",
+      data: { form: { id: "form_1", sessionID: "ses_form" } },
+    });
+
+    assert.equal(requests.length, 1);
+    assert.equal(JSON.parse(requests[0]).sessionID, "ses_form");
+  });
+});
+
 test("handle scopes events to the instance location by default", async () => {
   await withServer(async ({ url, requests }) => {
     const config = resolveConfig({
       events: { "session.idle": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
-    const notifier = createNotifier(makeHost(), config, true);
+    const notifier = createNotifier(makeHost(), config);
 
     // Same location: handled.
     await notifier.handle({
@@ -222,7 +280,7 @@ test("handle scope:global handles events from any location", async () => {
       events: { "session.idle": {} },
       targets: [{ name: "t", type: "generic", url }],
     });
-    const notifier = createNotifier(makeHost(), config, true);
+    const notifier = createNotifier(makeHost(), config);
 
     await notifier.handle({
       type: "session.idle",
@@ -242,7 +300,7 @@ test("handle skips events for another workspace of the same directory", async ()
     });
     const host = makeHost();
     host.location!.workspaceID = "ws_a";
-    const notifier = createNotifier(host, config, true);
+    const notifier = createNotifier(host, config);
 
     await notifier.handle({
       type: "session.idle",
@@ -251,40 +309,5 @@ test("handle skips events for another workspace of the same directory", async ()
     });
 
     assert.equal(requests.length, 0);
-  });
-});
-
-test("sendTest posts to configured targets", async () => {
-  await withServer(async ({ url, requests }) => {
-    const config = resolveConfig({
-      targets: [{ name: "t", type: "generic", url }],
-    });
-    const notifier = createNotifier(makeHost(), config, true);
-
-    const results = await notifier.sendTest();
-
-    assert.equal(results.length, 1);
-    assert.equal(results[0].target, "t");
-    assert.equal(results[0].result.ok, true);
-    assert.equal(requests.length, 1);
-    assert.equal(JSON.parse(requests[0]).event, "test");
-  });
-});
-
-test("setEnabled toggles sending at runtime", async () => {
-  await withServer(async ({ url, requests }) => {
-    const config = resolveConfig({
-      targets: [{ name: "t", type: "generic", url }],
-    });
-    const notifier = createNotifier(makeHost(), config, true);
-    notifier.setEnabled(false);
-
-    await notifier.handle({
-      type: "session.idle",
-      properties: { sessionID: "ses_1" },
-    });
-
-    assert.equal(requests.length, 0);
-    assert.match(notifier.status(), /disabled/);
   });
 });
