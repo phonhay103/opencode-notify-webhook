@@ -6,6 +6,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-09
+
+### Fixed
+
+- Declare `@opencode/plugin` as a runtime `dependency` (was a peer/dev-only
+  dependency), matching the OpenCode plugin manifest so the host can resolve
+  the plugin API when installing from npm.
+
 ## [0.1.2] - 2026-10-09
 
 ### Added
