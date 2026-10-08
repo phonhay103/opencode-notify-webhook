@@ -1,0 +1,75 @@
+{
+  "enabled": true,
+  "includeSubagents": false,
+  "defaults": {
+    "timeoutMs": 10000,
+    "retries": 2,
+    "method": "POST"
+  },
+  "events": {
+    "session.idle": { "message": "Session finished and is waiting for input" },
+    "session.error": { "message": "Session encountered an error" },
+    "permission.asked": { "message": "Permission required to continue" },
+    "question.asked": { "message": "Input required to continue" }
+  },
+  "targets": [
+    {
+      "name": "slack",
+      "type": "slack",
+      "url": "${SLACK_WEBHOOK_URL}",
+      "events": ["session.idle", "session.error", "permission.asked"]
+    },
+    {
+      "name": "discord",
+      "type": "discord",
+      "url": "${DISCORD_WEBHOOK_URL}",
+      "username": "opencode",
+      "events": ["session.error"]
+    },
+    {
+      "name": "ntfy",
+      "type": "ntfy",
+      "url": "https://ntfy.sh/opencode-alerts",
+      "priority": 4,
+      "tags": ["robot"],
+      "events": ["*"]
+    },
+    {
+      "name": "gotify",
+      "type": "gotify",
+      "url": "https://gotify.example.com/message",
+      "token": "${GOTIFY_TOKEN}",
+      "priority": 5,
+      "events": ["session.error", "permission.asked"]
+    },
+    {
+      "name": "telegram",
+      "type": "telegram",
+      "token": "${TELEGRAM_BOT_TOKEN}",
+      "chatId": "${TELEGRAM_CHAT_ID}",
+      "events": ["session.idle"]
+    },
+    {
+      "name": "generic-json",
+      "type": "generic",
+      "url": "https://example.com/hooks/opencode",
+      "method": "POST",
+      "headers": { "Authorization": "Bearer ${MY_HOOK_TOKEN}" },
+      "events": ["session.idle", "session.error"],
+      "payload": {
+        "event": "{{event}}",
+        "text": "{{emoji}} {{message}}",
+        "project": "{{project.name}}",
+        "session": "{{session.id}}",
+        "at": "{{timestamp}}"
+      }
+    },
+    {
+      "name": "generic-text",
+      "type": "generic",
+      "url": "https://example.com/hooks/plain",
+      "format": "text",
+      "events": ["*"]
+    }
+  ]
+}

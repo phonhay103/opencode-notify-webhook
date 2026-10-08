@@ -1,0 +1,52 @@
+{
+  "name": "opencode-notify-webhook",
+  "version": "0.1.0",
+  "description": "V2-native OpenCode plugin that sends notifications to webhooks (Slack, Discord, ntfy, Gotify, Telegram, Teams, Mattermost, generic JSON/text).",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "opencode-notify-webhook.example.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "notifications",
+    "webhook",
+    "slack",
+    "discord",
+    "ntfy",
+    "gotify",
+    "telegram",
+    "teams",
+    "mattermost"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "peerDependencies": {
+    "@opencode/plugin": ">=2.0.0"
+  },
+  "devDependencies": {
+    "@opencode/plugin": "^2.0.25",
+    "@types/node": "^22.15.0",
+    "typescript": "^5.9.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "dev:link": "node scripts/dev-link.mjs",
+    "dev:unlink": "node -e \"require('node:fs').rmSync('.opencode/plugins/notify.ts',{ force: true })\"",
+    "prepublishOnly": "npm run typecheck && npm test"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
