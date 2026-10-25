@@ -1,9 +1,27 @@
-# Secret scanning on every commit (https://github.com/gitleaks/gitleaks).
+# A small TypeScript CLI. Both commands are the repo's own and fast (tsc plus
+# the built-in node test runner), so they run on every commit rather than
+# living only in `prepublishOnly`.
 # One-time setup per clone:  pre-commit install
-# The hook builds gitleaks with the Go toolchain on first run, so Go must be
-# on PATH; the built binary is cached afterwards.
-# Only staged changes are scanned, and matches are redacted in the output.
 repos:
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: typecheck (tsc --noEmit)
+        entry: npm run typecheck --silent
+        language: system
+        files: \.(ts|js|mjs)$
+        pass_filenames: false
+
+      - id: test
+        name: test (node --test)
+        entry: npm test --silent
+        language: system
+        files: \.(ts|js|mjs)$
+        pass_filenames: false
+
+  # The hook builds gitleaks with the Go toolchain on first run, so Go must be
+  # on PATH; the built binary is cached afterwards. Only the staged diff is
+  # scanned, and matches are redacted in the output.
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
